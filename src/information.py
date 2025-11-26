@@ -1,8 +1,8 @@
 """
-Information theory functions for entropy and mutual information.
+Information theory functions for entropy, mutual information, and transfer entropy.
 
-This module provides functions for computing various entropy and
-mutual information measures used in signal analysis and connectivity metrics.
+This module provides functions for computing various entropy, mutual information,
+and transfer entropy measures used in signal analysis and connectivity metrics.
 
 Functions
 ---------
@@ -47,6 +47,24 @@ Mutual Information Functions:
         Compute MI at different time lags for directionality.
     compute_mi_matrix
         Compute MI connectivity matrix for multiple signals.
+
+Transfer Entropy Functions:
+    create_embedding_vectors
+        Create embedded state vectors for TE computation.
+    compute_transfer_entropy
+        Compute directed transfer entropy from X to Y.
+    compute_net_transfer_entropy
+        Compute TE in both directions and net flow.
+    compute_te_surrogate
+        Compute TE with shuffled source (null hypothesis).
+    te_significance_test
+        Test TE significance using surrogate distribution.
+    compute_te_matrix
+        Compute directed TE matrix for multi-channel data.
+    compute_net_te_matrix
+        Compute net TE matrix (antisymmetric).
+    compute_te_hyperscanning
+        Compute inter-brain TE for hyperscanning analysis.
 """
 
 import numpy as np
@@ -983,3 +1001,523 @@ def compute_mi_matrix(
             mi_matrix[j, i] = mi
     
     return mi_matrix
+
+
+# =============================================================================
+# TRANSFER ENTROPY FUNCTIONS
+# =============================================================================
+
+
+def create_embedding_vectors(
+    x: NDArray[np.float64],
+    y: NDArray[np.float64],
+    k: int = 1,
+    l: int = 1,
+    tau: int = 1
+) -> Tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]]:
+    """
+    Create embedded state vectors for transfer entropy computation.
+    
+    Parameters
+    ----------
+    x : NDArray[np.float64]
+        Source signal.
+    y : NDArray[np.float64]
+        Target signal.
+    k : int, optional
+        History length for target Y. Default is 1.
+    l : int, optional
+        History length for source X. Default is 1.
+    tau : int, optional
+        Embedding delay in samples. Default is 1.
+    
+    Returns
+    -------
+    y_future : NDArray[np.float64]
+        Future values of Y, shape (n_valid,).
+    y_past : NDArray[np.float64]
+        Past values of Y, shape (n_valid, k).
+    x_past : NDArray[np.float64]
+        Past values of X, shape (n_valid, l).
+    
+    Examples
+    --------
+    >>> x = np.random.randn(1000)
+    >>> y = np.random.randn(1000)
+    >>> y_fut, y_past, x_past = create_embedding_vectors(x, y, k=2, l=2, tau=5)
+    """
+    n = len(x)
+    
+    # Determine valid range
+    max_history = max(k, l) * tau
+    start_idx = max_history
+    
+    n_valid = n - start_idx
+    
+    # Initialize arrays
+    y_future = np.zeros(n_valid)
+    y_past = np.zeros((n_valid, k))
+    x_past = np.zeros((n_valid, l))
+    
+    for i in range(n_valid):
+        t = start_idx + i
+        y_future[i] = y[t]
+        
+        # Y past: [y(t-tau), y(t-2*tau), ..., y(t-k*tau)]
+        for j in range(k):
+            y_past[i, j] = y[t - (j + 1) * tau]
+        
+        # X past: [x(t-tau), x(t-2*tau), ..., x(t-l*tau)]
+        for j in range(l):
+            x_past[i, j] = x[t - (j + 1) * tau]
+    
+    return y_future, y_past, x_past
+
+
+def compute_transfer_entropy(
+    x: NDArray[np.float64],
+    y: NDArray[np.float64],
+    k: int = 1,
+    l: int = 1,
+    tau: int = 1,
+    n_bins: int = 8
+) -> float:
+    """
+    Compute transfer entropy from X to Y.
+    
+    Transfer entropy measures the directed information flow from X to Y,
+    quantifying how much knowing X's past helps predict Y's future,
+    beyond what Y's past already tells us.
+    
+    TE_{X→Y} = I(Y_t; X_past | Y_past)
+             = H(Y_t | Y_past) - H(Y_t | Y_past, X_past)
+    
+    Parameters
+    ----------
+    x : NDArray[np.float64]
+        Source signal.
+    y : NDArray[np.float64]
+        Target signal.
+    k : int, optional
+        History length for target Y. Default is 1.
+    l : int, optional
+        History length for source X. Default is 1.
+    tau : int, optional
+        Embedding delay in samples. Default is 1.
+    n_bins : int, optional
+        Number of bins for discretization. Default is 8.
+    
+    Returns
+    -------
+    float
+        Transfer entropy from X to Y in bits.
+    
+    Examples
+    --------
+    >>> x = np.random.randn(1000)
+    >>> y = np.zeros(1000)
+    >>> y[10:] = 0.5 * x[:-10] + 0.5 * np.random.randn(990)  # Y follows X
+    >>> te_xy = compute_transfer_entropy(x, y, k=1, l=1, tau=10)
+    >>> te_yx = compute_transfer_entropy(y, x, k=1, l=1, tau=10)
+    >>> # te_xy > te_yx (X drives Y)
+    """
+    # Create embedding vectors
+    y_future, y_past, x_past = create_embedding_vectors(x, y, k, l, tau)
+    
+    n_samples = len(y_future)
+    
+    # Discretize all variables
+    def discretize(arr: NDArray[np.float64]) -> NDArray[np.int64]:
+        """Discretize array into bins."""
+        if arr.ndim == 1:
+            arr = arr.reshape(-1, 1)
+        
+        result = np.zeros(arr.shape, dtype=np.int64)
+        for col in range(arr.shape[1]):
+            percentiles = np.linspace(0, 100, n_bins + 1)
+            bin_edges = np.percentile(arr[:, col], percentiles)
+            result[:, col] = np.digitize(arr[:, col], bin_edges[1:-1])
+        
+        return result
+    
+    y_fut_d = discretize(y_future).flatten()
+    y_past_d = discretize(y_past)
+    x_past_d = discretize(x_past)
+    
+    # Convert multi-dimensional indices to single index
+    def to_single_index(arr: NDArray[np.int64]) -> NDArray[np.int64]:
+        """Convert multi-column discrete array to single index."""
+        if arr.ndim == 1:
+            return arr
+        result = np.zeros(len(arr), dtype=np.int64)
+        multiplier = 1
+        for col in range(arr.shape[1] - 1, -1, -1):
+            result += arr[:, col] * multiplier
+            multiplier *= n_bins
+        return result
+    
+    y_past_idx = to_single_index(y_past_d)
+    x_past_idx = to_single_index(x_past_d)
+    
+    # Combined index for (y_past, x_past)
+    yx_past_idx = y_past_idx * (n_bins ** l) + x_past_idx
+    
+    # Compute conditional entropies
+    def entropy_from_joint(idx1: NDArray[np.int64], idx2: NDArray[np.int64]) -> float:
+        """Compute H(idx1 | idx2) = H(idx1, idx2) - H(idx2)."""
+        joint = np.ravel_multi_index(
+            (idx1, idx2), 
+            (int(idx1.max()) + 1, int(idx2.max()) + 1)
+        )
+        _, joint_counts = np.unique(joint, return_counts=True)
+        p_joint = joint_counts / n_samples
+        H_joint = -np.sum(p_joint * np.log2(p_joint + 1e-12))
+        
+        _, marginal_counts = np.unique(idx2, return_counts=True)
+        p_marginal = marginal_counts / n_samples
+        H_marginal = -np.sum(p_marginal * np.log2(p_marginal + 1e-12))
+        
+        return H_joint - H_marginal
+    
+    # H(Y_t | Y_past)
+    H_y_given_ypast = entropy_from_joint(y_fut_d, y_past_idx)
+    
+    # H(Y_t | Y_past, X_past)
+    H_y_given_yxpast = entropy_from_joint(y_fut_d, yx_past_idx)
+    
+    # Transfer Entropy
+    te = H_y_given_ypast - H_y_given_yxpast
+    
+    return max(0.0, float(te))
+
+
+def compute_net_transfer_entropy(
+    x: NDArray[np.float64],
+    y: NDArray[np.float64],
+    k: int = 1,
+    l: int = 1,
+    tau: int = 1,
+    n_bins: int = 8
+) -> dict:
+    """
+    Compute transfer entropy in both directions and net flow.
+    
+    Net TE = TE_{X→Y} - TE_{Y→X}
+    - Positive: X dominates (more information flows X→Y)
+    - Negative: Y dominates (more information flows Y→X)
+    - Zero: Balanced bidirectional coupling
+    
+    Parameters
+    ----------
+    x : NDArray[np.float64]
+        First signal.
+    y : NDArray[np.float64]
+        Second signal.
+    k : int, optional
+        History length. Default is 1.
+    l : int, optional
+        History length. Default is 1.
+    tau : int, optional
+        Embedding delay. Default is 1.
+    n_bins : int, optional
+        Number of bins. Default is 8.
+    
+    Returns
+    -------
+    dict
+        Dictionary with:
+        - 'te_x_to_y': TE from X to Y
+        - 'te_y_to_x': TE from Y to X
+        - 'net_te': Net transfer entropy (positive = X dominates)
+        - 'dominant': 'X', 'Y', or 'balanced'
+    
+    Examples
+    --------
+    >>> x = np.random.randn(1000)
+    >>> y = np.zeros(1000)
+    >>> y[5:] = 0.5 * x[:-5] + np.random.randn(995)
+    >>> result = compute_net_transfer_entropy(x, y, tau=5)
+    >>> print(f"Dominant: {result['dominant']}")  # Should be 'X'
+    """
+    te_x_to_y = compute_transfer_entropy(x, y, k, l, tau, n_bins)
+    te_y_to_x = compute_transfer_entropy(y, x, k, l, tau, n_bins)
+    
+    net_te = te_x_to_y - te_y_to_x
+    
+    # Determine dominant direction (with small threshold for "balanced")
+    threshold = 0.01
+    if net_te > threshold:
+        dominant = "X"
+    elif net_te < -threshold:
+        dominant = "Y"
+    else:
+        dominant = "balanced"
+    
+    return {
+        "te_x_to_y": te_x_to_y,
+        "te_y_to_x": te_y_to_x,
+        "net_te": net_te,
+        "dominant": dominant
+    }
+
+
+def compute_te_surrogate(
+    x: NDArray[np.float64],
+    y: NDArray[np.float64],
+    k: int = 1,
+    l: int = 1,
+    tau: int = 1,
+    n_bins: int = 8,
+    seed: Optional[int] = None
+) -> float:
+    """
+    Compute TE with shuffled source signal (null hypothesis).
+    
+    Parameters
+    ----------
+    x : NDArray[np.float64]
+        Source signal (will be shuffled).
+    y : NDArray[np.float64]
+        Target signal (kept intact).
+    k : int, optional
+        History length for target. Default is 1.
+    l : int, optional
+        History length for source. Default is 1.
+    tau : int, optional
+        Embedding delay. Default is 1.
+    n_bins : int, optional
+        Number of bins. Default is 8.
+    seed : int, optional
+        Random seed.
+    
+    Returns
+    -------
+    float
+        TE computed on shuffled source (null TE).
+    """
+    rng = np.random.RandomState(seed)
+    x_shuffled = rng.permutation(x)
+    return compute_transfer_entropy(x_shuffled, y, k, l, tau, n_bins)
+
+
+def te_significance_test(
+    x: NDArray[np.float64],
+    y: NDArray[np.float64],
+    k: int = 1,
+    l: int = 1,
+    tau: int = 1,
+    n_bins: int = 8,
+    n_surrogates: int = 200,
+    seed: Optional[int] = None
+) -> dict:
+    """
+    Test significance of transfer entropy using surrogate distribution.
+    
+    Parameters
+    ----------
+    x : NDArray[np.float64]
+        Source signal.
+    y : NDArray[np.float64]
+        Target signal.
+    k : int, optional
+        History length for target. Default is 1.
+    l : int, optional
+        History length for source. Default is 1.
+    tau : int, optional
+        Embedding delay. Default is 1.
+    n_bins : int, optional
+        Number of bins. Default is 8.
+    n_surrogates : int, optional
+        Number of surrogates. Default is 200.
+    seed : int, optional
+        Random seed.
+    
+    Returns
+    -------
+    dict
+        Contains: te_observed, te_effective, null_mean, null_std, p_value
+    """
+    te_observed = compute_transfer_entropy(x, y, k, l, tau, n_bins)
+    
+    rng = np.random.RandomState(seed)
+    null_te = np.array([
+        compute_te_surrogate(x, y, k, l, tau, n_bins, seed=rng.randint(100000))
+        for _ in range(n_surrogates)
+    ])
+    
+    null_mean = float(np.mean(null_te))
+    null_std = float(np.std(null_te))
+    te_effective = te_observed - null_mean
+    p_value = float(np.mean(null_te >= te_observed))
+    
+    return {
+        "te_observed": te_observed,
+        "te_effective": te_effective,
+        "null_mean": null_mean,
+        "null_std": null_std,
+        "null_distribution": null_te,
+        "p_value": p_value
+    }
+
+
+def compute_te_matrix(
+    data: NDArray[np.float64],
+    k: int = 1,
+    l: int = 1,
+    tau: int = 1,
+    n_bins: int = 8
+) -> NDArray[np.float64]:
+    """
+    Compute directed TE matrix for multi-channel data.
+    
+    Unlike MI matrix, the TE matrix is NOT symmetric:
+    TE[i, j] = TE from channel i to channel j
+    
+    Parameters
+    ----------
+    data : NDArray[np.float64]
+        Multi-channel data of shape (n_channels, n_samples).
+    k : int, optional
+        History length for target. Default is 1.
+    l : int, optional
+        History length for source. Default is 1.
+    tau : int, optional
+        Embedding delay. Default is 1.
+    n_bins : int, optional
+        Number of bins. Default is 8.
+    
+    Returns
+    -------
+    NDArray[np.float64]
+        TE matrix of shape (n_channels, n_channels).
+        Entry [i, j] = TE from channel i to channel j.
+        Diagonal is NaN.
+    
+    Examples
+    --------
+    >>> data = np.random.randn(5, 1000)
+    >>> te_matrix = compute_te_matrix(data)
+    >>> # Note: te_matrix[i,j] != te_matrix[j,i] in general
+    """
+    n_channels = data.shape[0]
+    te_matrix = np.full((n_channels, n_channels), np.nan)
+    
+    for i in range(n_channels):
+        for j in range(n_channels):
+            if i != j:
+                te_matrix[i, j] = compute_transfer_entropy(
+                    data[i], data[j], k, l, tau, n_bins
+                )
+    
+    return te_matrix
+
+
+def compute_net_te_matrix(te_matrix: NDArray[np.float64]) -> NDArray[np.float64]:
+    """
+    Compute net TE matrix from directed TE matrix.
+    
+    Net[i, j] = TE[i, j] - TE[j, i]
+    
+    The net TE matrix is antisymmetric: Net[i, j] = -Net[j, i]
+    
+    Parameters
+    ----------
+    te_matrix : NDArray[np.float64]
+        Directed TE matrix from compute_te_matrix.
+    
+    Returns
+    -------
+    NDArray[np.float64]
+        Net TE matrix (antisymmetric).
+    
+    Examples
+    --------
+    >>> te_matrix = compute_te_matrix(data)
+    >>> net_te = compute_net_te_matrix(te_matrix)
+    >>> # net_te[i,j] > 0 means i→j dominates
+    """
+    return te_matrix - te_matrix.T
+
+
+def compute_te_hyperscanning(
+    data_p1: NDArray[np.float64],
+    data_p2: NDArray[np.float64],
+    k: int = 1,
+    l: int = 1,
+    tau: int = 1,
+    n_bins: int = 8
+) -> dict:
+    """
+    Compute inter-brain TE for hyperscanning analysis.
+    
+    Computes TE between all channel pairs across two participants
+    to determine who leads the interaction.
+    
+    Parameters
+    ----------
+    data_p1 : NDArray[np.float64]
+        Participant 1 data, shape (n_channels, n_samples).
+    data_p2 : NDArray[np.float64]
+        Participant 2 data, shape (n_channels, n_samples).
+    k : int, optional
+        History length. Default is 1.
+    l : int, optional
+        History length. Default is 1.
+    tau : int, optional
+        Embedding delay. Default is 1.
+    n_bins : int, optional
+        Number of bins. Default is 8.
+    
+    Returns
+    -------
+    dict
+        Contains:
+        - 'te_p1_to_p2': TE matrix from P1 to P2
+        - 'te_p2_to_p1': TE matrix from P2 to P1
+        - 'mean_p1_to_p2': Mean TE from P1 to P2
+        - 'mean_p2_to_p1': Mean TE from P2 to P1
+        - 'net_te': Net TE (positive = P1 leads)
+        - 'leader': 'P1', 'P2', or 'balanced'
+    
+    Examples
+    --------
+    >>> data_p1 = np.random.randn(3, 1000)  # 3 channels
+    >>> data_p2 = np.random.randn(3, 1000)
+    >>> result = compute_te_hyperscanning(data_p1, data_p2)
+    >>> print(f"Leader: {result['leader']}")
+    """
+    n_ch1 = data_p1.shape[0]
+    n_ch2 = data_p2.shape[0]
+    
+    te_p1_to_p2 = np.zeros((n_ch1, n_ch2))
+    te_p2_to_p1 = np.zeros((n_ch2, n_ch1))
+    
+    for i in range(n_ch1):
+        for j in range(n_ch2):
+            te_p1_to_p2[i, j] = compute_transfer_entropy(
+                data_p1[i], data_p2[j], k, l, tau, n_bins
+            )
+            te_p2_to_p1[j, i] = compute_transfer_entropy(
+                data_p2[j], data_p1[i], k, l, tau, n_bins
+            )
+    
+    mean_p1_to_p2 = float(np.mean(te_p1_to_p2))
+    mean_p2_to_p1 = float(np.mean(te_p2_to_p1))
+    net_te = mean_p1_to_p2 - mean_p2_to_p1
+    
+    threshold = 0.01
+    if net_te > threshold:
+        leader = "P1"
+    elif net_te < -threshold:
+        leader = "P2"
+    else:
+        leader = "balanced"
+    
+    return {
+        "te_p1_to_p2": te_p1_to_p2,
+        "te_p2_to_p1": te_p2_to_p1,
+        "mean_p1_to_p2": mean_p1_to_p2,
+        "mean_p2_to_p1": mean_p2_to_p1,
+        "net_te": net_te,
+        "leader": leader
+    }
