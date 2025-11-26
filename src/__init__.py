@@ -16,4 +16,11 @@ __all__ = [
     "constants",
     "colors",
     "plotting",
+    "hilbert",
+    "phase",
+    "envelope",
+    "wavelets",
+    "volume_conduction",
+    "connectivity",
+    "statistics",
 ]
