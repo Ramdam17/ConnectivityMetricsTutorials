@@ -1,31 +1,52 @@
 """
-Information theory functions for entropy and related measures.
+Information theory functions for entropy and mutual information.
 
-This module provides functions for computing various entropy measures
-used in signal analysis and connectivity metrics.
+This module provides functions for computing various entropy and
+mutual information measures used in signal analysis and connectivity metrics.
 
 Functions
 ---------
-compute_entropy_discrete
-    Compute Shannon entropy of a discrete probability distribution.
-compute_entropy_from_counts
-    Estimate entropy from observed counts.
-compute_max_entropy
-    Compute maximum possible entropy for n states.
-compute_normalized_entropy
-    Compute entropy normalized by maximum (range 0-1).
-binary_entropy
-    Compute binary entropy function H(p).
-optimal_n_bins
-    Compute optimal number of bins for entropy estimation.
-compute_entropy_continuous
-    Estimate entropy of a continuous signal via binning.
-compute_entropy_miller_madow
-    Compute entropy with Miller-Madow bias correction.
-compute_spectral_entropy
-    Compute spectral entropy of a signal.
-compute_sample_entropy
-    Compute sample entropy of a time series.
+Entropy Functions:
+    compute_entropy_discrete
+        Compute Shannon entropy of a discrete probability distribution.
+    compute_entropy_from_counts
+        Estimate entropy from observed counts.
+    compute_max_entropy
+        Compute maximum possible entropy for n states.
+    compute_normalized_entropy
+        Compute entropy normalized by maximum (range 0-1).
+    binary_entropy
+        Compute binary entropy function H(p).
+    optimal_n_bins
+        Compute optimal number of bins for entropy estimation.
+    compute_entropy_continuous
+        Estimate entropy of a continuous signal via binning.
+    compute_entropy_miller_madow
+        Compute entropy with Miller-Madow bias correction.
+    compute_spectral_entropy
+        Compute spectral entropy of a signal.
+    compute_sample_entropy
+        Compute sample entropy of a time series.
+
+Mutual Information Functions:
+    compute_joint_histogram
+        Compute 2D histogram for joint probability estimation.
+    compute_joint_entropy
+        Compute joint entropy H(X, Y) of two signals.
+    compute_conditional_entropy
+        Compute conditional entropy H(Y|X).
+    compute_mutual_information
+        Compute mutual information I(X; Y) between two signals.
+    compute_normalized_mi
+        Compute normalized mutual information (range 0-1).
+    mi_significance_test
+        Test MI significance using surrogate data.
+    compute_mi_sliding_window
+        Compute MI in sliding windows for time-varying analysis.
+    compute_time_lagged_mi
+        Compute MI at different time lags for directionality.
+    compute_mi_matrix
+        Compute MI connectivity matrix for multiple signals.
 """
 
 import numpy as np
@@ -509,3 +530,456 @@ def compute_sample_entropy(
         return np.inf  # No matches found
     
     return -np.log(A / B)
+
+
+# =============================================================================
+# MUTUAL INFORMATION FUNCTIONS
+# =============================================================================
+
+
+def compute_joint_histogram(
+    x: NDArray[np.float64],
+    y: NDArray[np.float64],
+    n_bins: int = 20
+) -> Tuple[NDArray[np.float64], NDArray[np.float64], NDArray[np.float64]]:
+    """
+    Compute 2D histogram for joint probability estimation.
+    
+    Parameters
+    ----------
+    x : NDArray[np.float64]
+        First signal.
+    y : NDArray[np.float64]
+        Second signal.
+    n_bins : int, optional
+        Number of bins for each dimension. Default is 20.
+    
+    Returns
+    -------
+    hist_2d : NDArray[np.float64]
+        2D histogram counts.
+    x_edges : NDArray[np.float64]
+        Bin edges for x.
+    y_edges : NDArray[np.float64]
+        Bin edges for y.
+    
+    Examples
+    --------
+    >>> x = np.random.randn(1000)
+    >>> y = 0.5 * x + np.random.randn(1000)
+    >>> hist, x_edges, y_edges = compute_joint_histogram(x, y)
+    """
+    hist_2d, x_edges, y_edges = np.histogram2d(x, y, bins=n_bins)
+    return hist_2d, x_edges, y_edges
+
+
+def compute_joint_entropy(
+    x: NDArray[np.float64],
+    y: NDArray[np.float64],
+    n_bins: int = 20
+) -> float:
+    """
+    Compute joint entropy H(X, Y) of two continuous signals.
+    
+    Joint entropy measures the total uncertainty of both variables
+    together.
+    
+    Parameters
+    ----------
+    x : NDArray[np.float64]
+        First signal.
+    y : NDArray[np.float64]
+        Second signal.
+    n_bins : int, optional
+        Number of bins for discretization. Default is 20.
+    
+    Returns
+    -------
+    float
+        Joint entropy H(X, Y) in bits.
+    
+    Examples
+    --------
+    >>> x = np.random.randn(1000)
+    >>> y = x.copy()  # Perfect correlation
+    >>> H_xy = compute_joint_entropy(x, y)
+    >>> # H_xy ≈ H(X) since Y = X
+    """
+    hist_2d, _, _ = compute_joint_histogram(x, y, n_bins)
+    
+    # Convert to probabilities
+    p_xy = hist_2d / np.sum(hist_2d)
+    
+    # Compute entropy (filter zeros)
+    p_xy_flat = p_xy.flatten()
+    p_xy_valid = p_xy_flat[p_xy_flat > 0]
+    
+    H_xy = -np.sum(p_xy_valid * np.log2(p_xy_valid))
+    
+    return float(H_xy)
+
+
+def compute_conditional_entropy(
+    x: NDArray[np.float64],
+    y: NDArray[np.float64],
+    n_bins: int = 20
+) -> float:
+    """
+    Compute conditional entropy H(Y|X).
+    
+    Conditional entropy measures how much uncertainty remains in Y
+    after knowing X.
+    
+    H(Y|X) = H(X, Y) - H(X)
+    
+    Parameters
+    ----------
+    x : NDArray[np.float64]
+        Conditioning variable.
+    y : NDArray[np.float64]
+        Variable whose conditional entropy is computed.
+    n_bins : int, optional
+        Number of bins for discretization. Default is 20.
+    
+    Returns
+    -------
+    float
+        Conditional entropy H(Y|X) in bits.
+    
+    Examples
+    --------
+    >>> x = np.random.randn(1000)
+    >>> y = x + 0.1 * np.random.randn(1000)  # Y depends on X
+    >>> H_y_given_x = compute_conditional_entropy(x, y)
+    >>> # H_y_given_x will be small since Y ≈ X
+    """
+    H_xy = compute_joint_entropy(x, y, n_bins)
+    H_x, _ = compute_entropy_continuous(x, n_bins)
+    
+    return H_xy - H_x
+
+
+def compute_mutual_information(
+    x: NDArray[np.float64],
+    y: NDArray[np.float64],
+    n_bins: int = 20
+) -> float:
+    """
+    Compute mutual information I(X; Y) between two signals.
+    
+    MI measures how much information is shared between X and Y.
+    It captures both linear and non-linear dependencies.
+    
+    I(X; Y) = H(X) + H(Y) - H(X, Y)
+    
+    Parameters
+    ----------
+    x : NDArray[np.float64]
+        First signal.
+    y : NDArray[np.float64]
+        Second signal.
+    n_bins : int, optional
+        Number of bins for discretization. Default is 20.
+    
+    Returns
+    -------
+    float
+        Mutual information I(X; Y) in bits.
+    
+    Examples
+    --------
+    >>> x = np.random.randn(1000)
+    >>> y = x**2  # Non-linear relationship
+    >>> mi = compute_mutual_information(x, y)
+    >>> corr = np.corrcoef(x, y)[0, 1]
+    >>> # MI will be high even though correlation ≈ 0
+    """
+    H_x, _ = compute_entropy_continuous(x, n_bins)
+    H_y, _ = compute_entropy_continuous(y, n_bins)
+    H_xy = compute_joint_entropy(x, y, n_bins)
+    
+    mi = H_x + H_y - H_xy
+    
+    # MI should be non-negative (numerical errors can make it slightly negative)
+    return float(max(0, mi))
+
+
+def compute_normalized_mi(
+    x: NDArray[np.float64],
+    y: NDArray[np.float64],
+    n_bins: int = 20,
+    method: str = "arithmetic"
+) -> float:
+    """
+    Compute normalized mutual information (range 0-1).
+    
+    Parameters
+    ----------
+    x : NDArray[np.float64]
+        First signal.
+    y : NDArray[np.float64]
+        Second signal.
+    n_bins : int, optional
+        Number of bins for discretization. Default is 20.
+    method : str, optional
+        Normalization method:
+        - "arithmetic": NMI = 2 * I(X;Y) / (H(X) + H(Y))
+        - "geometric": NMI = I(X;Y) / sqrt(H(X) * H(Y))
+        - "min": NMI = I(X;Y) / min(H(X), H(Y))
+        - "max": NMI = I(X;Y) / max(H(X), H(Y))
+        Default is "arithmetic".
+    
+    Returns
+    -------
+    float
+        Normalized MI in range [0, 1].
+    
+    Examples
+    --------
+    >>> x = np.random.randn(1000)
+    >>> y = x.copy()  # Perfect dependence
+    >>> nmi = compute_normalized_mi(x, y)
+    >>> # nmi ≈ 1.0
+    """
+    H_x, _ = compute_entropy_continuous(x, n_bins)
+    H_y, _ = compute_entropy_continuous(y, n_bins)
+    mi = compute_mutual_information(x, y, n_bins)
+    
+    if method == "arithmetic":
+        denom = (H_x + H_y) / 2
+    elif method == "geometric":
+        denom = np.sqrt(H_x * H_y)
+    elif method == "min":
+        denom = min(H_x, H_y)
+    elif method == "max":
+        denom = max(H_x, H_y)
+    else:
+        raise ValueError(f"Unknown method: {method}")
+    
+    if denom <= 0:
+        return 0.0
+    
+    return float(min(1.0, mi / denom))
+
+
+def mi_significance_test(
+    x: NDArray[np.float64],
+    y: NDArray[np.float64],
+    n_bins: int = 20,
+    n_surrogates: int = 100,
+    alpha: float = 0.05
+) -> dict:
+    """
+    Test MI significance using surrogate data.
+    
+    Creates shuffled surrogates to build a null distribution
+    of MI values under the hypothesis of independence.
+    
+    Parameters
+    ----------
+    x : NDArray[np.float64]
+        First signal.
+    y : NDArray[np.float64]
+        Second signal.
+    n_bins : int, optional
+        Number of bins for MI estimation. Default is 20.
+    n_surrogates : int, optional
+        Number of shuffled surrogates. Default is 100.
+    alpha : float, optional
+        Significance level. Default is 0.05.
+    
+    Returns
+    -------
+    dict
+        Dictionary with:
+        - 'mi_observed': Observed MI value
+        - 'mi_surrogates': Array of surrogate MI values
+        - 'p_value': Proportion of surrogates >= observed MI
+        - 'significant': Boolean, whether MI is significant
+        - 'threshold': MI threshold at (1-alpha) percentile
+    
+    Examples
+    --------
+    >>> x = np.random.randn(1000)
+    >>> y = 0.5 * x + np.random.randn(1000)
+    >>> result = mi_significance_test(x, y)
+    >>> print(f"Significant: {result['significant']}")
+    """
+    # Observed MI
+    mi_observed = compute_mutual_information(x, y, n_bins)
+    
+    # Generate surrogate distribution
+    mi_surrogates = np.zeros(n_surrogates)
+    
+    for i in range(n_surrogates):
+        # Shuffle one signal to break any dependency
+        y_shuffled = np.random.permutation(y)
+        mi_surrogates[i] = compute_mutual_information(x, y_shuffled, n_bins)
+    
+    # Compute p-value (proportion of surrogates >= observed)
+    p_value = np.mean(mi_surrogates >= mi_observed)
+    
+    # Significance threshold
+    threshold = np.percentile(mi_surrogates, 100 * (1 - alpha))
+    
+    return {
+        'mi_observed': mi_observed,
+        'mi_surrogates': mi_surrogates,
+        'p_value': p_value,
+        'significant': p_value < alpha,
+        'threshold': threshold
+    }
+
+
+def compute_mi_sliding_window(
+    x: NDArray[np.float64],
+    y: NDArray[np.float64],
+    window_size: int,
+    step_size: int,
+    n_bins: int = 20
+) -> Tuple[NDArray[np.float64], NDArray[np.float64]]:
+    """
+    Compute MI in sliding windows for time-varying analysis.
+    
+    Parameters
+    ----------
+    x : NDArray[np.float64]
+        First signal.
+    y : NDArray[np.float64]
+        Second signal.
+    window_size : int
+        Window size in samples.
+    step_size : int
+        Step size between windows in samples.
+    n_bins : int, optional
+        Number of bins for MI estimation. Default is 20.
+    
+    Returns
+    -------
+    centers : NDArray[np.float64]
+        Window center positions in samples.
+    mi_values : NDArray[np.float64]
+        MI value for each window.
+    
+    Examples
+    --------
+    >>> fs = 256
+    >>> t = np.arange(0, 10, 1/fs)
+    >>> x = np.random.randn(len(t))
+    >>> y = np.random.randn(len(t))
+    >>> y[fs*3:fs*7] += 0.5 * x[fs*3:fs*7]  # Coupling in middle
+    >>> centers, mi_time = compute_mi_sliding_window(x, y, fs*2, fs//2)
+    """
+    n_samples = len(x)
+    n_windows = (n_samples - window_size) // step_size + 1
+    
+    centers = np.zeros(n_windows)
+    mi_values = np.zeros(n_windows)
+    
+    for i in range(n_windows):
+        start = i * step_size
+        end = start + window_size
+        centers[i] = (start + end) / 2
+        
+        mi_values[i] = compute_mutual_information(x[start:end], y[start:end], n_bins)
+    
+    return centers, mi_values
+
+
+def compute_time_lagged_mi(
+    x: NDArray[np.float64],
+    y: NDArray[np.float64],
+    max_lag: int,
+    n_bins: int = 20
+) -> Tuple[NDArray[np.int64], NDArray[np.float64]]:
+    """
+    Compute MI at different time lags for directionality analysis.
+    
+    Parameters
+    ----------
+    x : NDArray[np.float64]
+        First signal.
+    y : NDArray[np.float64]
+        Second signal.
+    max_lag : int
+        Maximum lag in samples (both positive and negative).
+    n_bins : int, optional
+        Number of bins for MI estimation. Default is 20.
+    
+    Returns
+    -------
+    lags : NDArray[np.int64]
+        Array of lag values (negative = X leads, positive = Y leads).
+    mi_values : NDArray[np.float64]
+        MI values at each lag.
+    
+    Examples
+    --------
+    >>> x = np.random.randn(1000)
+    >>> y = np.zeros(1000)
+    >>> y[10:] = x[:-10]  # Y follows X with 10 sample delay
+    >>> lags, mi_lagged = compute_time_lagged_mi(x, y, max_lag=50)
+    >>> peak_lag = lags[np.argmax(mi_lagged)]
+    >>> # peak_lag should be around -10 (X leads)
+    """
+    lags = np.arange(-max_lag, max_lag + 1)
+    mi_values = np.zeros(len(lags))
+    
+    for i, lag in enumerate(lags):
+        if lag < 0:
+            x_shifted = x[:lag]  # X leads
+            y_shifted = y[-lag:]
+        elif lag > 0:
+            x_shifted = x[lag:]  # Y leads
+            y_shifted = y[:-lag]
+        else:
+            x_shifted = x
+            y_shifted = y
+        
+        mi_values[i] = compute_mutual_information(x_shifted, y_shifted, n_bins)
+    
+    return lags, mi_values
+
+
+def compute_mi_matrix(
+    signals: NDArray[np.float64],
+    n_bins: int = 20,
+    normalize: bool = True
+) -> NDArray[np.float64]:
+    """
+    Compute MI connectivity matrix for multiple signals.
+    
+    Parameters
+    ----------
+    signals : NDArray[np.float64]
+        2D array of shape (n_channels, n_samples).
+    n_bins : int, optional
+        Number of bins for MI estimation. Default is 20.
+    normalize : bool, optional
+        If True, normalize MI to [0, 1] range. Default is True.
+    
+    Returns
+    -------
+    mi_matrix : NDArray[np.float64]
+        Symmetric MI matrix of shape (n_channels, n_channels).
+    
+    Examples
+    --------
+    >>> signals = np.random.randn(5, 1000)  # 5 channels
+    >>> mi_matrix = compute_mi_matrix(signals)
+    >>> # mi_matrix[i, j] is MI between channel i and j
+    """
+    n_channels = signals.shape[0]
+    mi_matrix = np.zeros((n_channels, n_channels))
+    
+    for i in range(n_channels):
+        for j in range(i + 1, n_channels):
+            if normalize:
+                mi = compute_normalized_mi(signals[i], signals[j], n_bins)
+            else:
+                mi = compute_mutual_information(signals[i], signals[j], n_bins)
+            
+            mi_matrix[i, j] = mi
+            mi_matrix[j, i] = mi
+    
+    return mi_matrix
