@@ -769,3 +769,371 @@ def compare_with_scipy_coherence(
         "max_difference": max_diff,
         "correlation": correlation,
     }
+
+
+# =============================================================================
+# Imaginary Coherence Functions
+# =============================================================================
+
+
+def compute_imaginary_coherence(
+    x: NDArray[np.floating],
+    y: NDArray[np.floating],
+    fs: float,
+    nperseg: int = 256,
+    noverlap: int | None = None,
+    window: str = "hann",
+) -> tuple[NDArray[np.floating], NDArray[np.floating]]:
+    """Compute imaginary coherence between two signals.
+
+    Imaginary coherence uses only the imaginary part of the cross-spectrum,
+    making it robust to volume conduction artifacts (zero-lag connections).
+
+    Based on Nolte et al. (2004): "Identifying true brain interaction from EEG
+    data using the imaginary part of coherency."
+
+    Parameters
+    ----------
+    x : NDArray[np.floating]
+        First input signal.
+    y : NDArray[np.floating]
+        Second input signal (same length as x).
+    fs : float
+        Sampling frequency in Hz.
+    nperseg : int, optional
+        Length of each segment for Welch's method. Default is 256.
+    noverlap : int | None, optional
+        Number of points to overlap between segments.
+        If None, defaults to nperseg // 2.
+    window : str, optional
+        Window function to apply. Default is "hann".
+
+    Returns
+    -------
+    frequencies : NDArray[np.floating]
+        Array of frequency values in Hz.
+    imcoh : NDArray[np.floating]
+        Imaginary coherence values (-1 to +1).
+        Positive: Y leads X. Negative: X leads Y.
+
+    Examples
+    --------
+    >>> t = np.linspace(0, 2, 2000, endpoint=False)
+    >>> x = np.sin(2 * np.pi * 10 * t)
+    >>> y = np.sin(2 * np.pi * 10 * t + np.pi / 4)  # Phase lag
+    >>> freqs, imcoh = compute_imaginary_coherence(x, y, fs=1000)
+    >>> idx_10hz = np.argmin(np.abs(freqs - 10))
+    >>> print(f"ImCoh at 10 Hz: {imcoh[idx_10hz]:.3f}")
+    """
+    if noverlap is None:
+        noverlap = nperseg // 2
+
+    # Compute cross-spectrum (complex)
+    freqs, sxy = csd(x, y, fs=fs, nperseg=nperseg, noverlap=noverlap, window=window)
+
+    # Compute power spectra
+    _, sxx = welch(x, fs=fs, nperseg=nperseg, noverlap=noverlap, window=window)
+    _, syy = welch(y, fs=fs, nperseg=nperseg, noverlap=noverlap, window=window)
+
+    # Imaginary coherence = Im(Sxy) / sqrt(Sxx * Syy)
+    imcoh = np.imag(sxy) / np.sqrt(sxx * syy)
+
+    return freqs, imcoh
+
+
+def compute_abs_imaginary_coherence(
+    x: NDArray[np.floating],
+    y: NDArray[np.floating],
+    fs: float,
+    nperseg: int = 256,
+    noverlap: int | None = None,
+    window: str = "hann",
+) -> tuple[NDArray[np.floating], NDArray[np.floating]]:
+    """Compute absolute imaginary coherence (magnitude only).
+
+    Same as compute_imaginary_coherence() but returns absolute values,
+    discarding information about which signal leads.
+
+    Parameters
+    ----------
+    x : NDArray[np.floating]
+        First input signal.
+    y : NDArray[np.floating]
+        Second input signal.
+    fs : float
+        Sampling frequency in Hz.
+    nperseg : int, optional
+        Length of each segment. Default is 256.
+    noverlap : int | None, optional
+        Overlap between segments. Default is nperseg // 2.
+    window : str, optional
+        Window function. Default is "hann".
+
+    Returns
+    -------
+    frequencies : NDArray[np.floating]
+        Frequency values in Hz.
+    abs_imcoh : NDArray[np.floating]
+        Absolute imaginary coherence (0 to 1).
+
+    Examples
+    --------
+    >>> t = np.linspace(0, 2, 2000, endpoint=False)
+    >>> x = np.sin(2 * np.pi * 10 * t)
+    >>> y = np.sin(2 * np.pi * 10 * t + np.pi / 4)
+    >>> freqs, abs_imcoh = compute_abs_imaginary_coherence(x, y, fs=1000)
+    """
+    freqs, imcoh = compute_imaginary_coherence(x, y, fs, nperseg, noverlap, window)
+    return freqs, np.abs(imcoh)
+
+
+def compute_band_imaginary_coherence(
+    x: NDArray[np.floating],
+    y: NDArray[np.floating],
+    fs: float,
+    band: tuple[float, float] = (8.0, 13.0),
+    nperseg: int = 256,
+    noverlap: int | None = None,
+    absolute: bool = False,
+) -> float:
+    """Compute imaginary coherence in a specific frequency band.
+
+    Parameters
+    ----------
+    x : NDArray[np.floating]
+        First input signal.
+    y : NDArray[np.floating]
+        Second input signal.
+    fs : float
+        Sampling frequency in Hz.
+    band : tuple[float, float], optional
+        Frequency band (low, high) in Hz. Default is (8, 13) for alpha band.
+    nperseg : int, optional
+        Length of each segment. Default is 256.
+    noverlap : int | None, optional
+        Overlap between segments. Default is nperseg // 2.
+    absolute : bool, optional
+        If True, return absolute value. Default is False.
+
+    Returns
+    -------
+    imcoh_band : float
+        Mean imaginary coherence in the specified band.
+
+    Examples
+    --------
+    >>> # Alpha band imaginary coherence
+    >>> imcoh_alpha = compute_band_imaginary_coherence(x, y, fs=500, band=(8, 13))
+    """
+    freqs, imcoh = compute_imaginary_coherence(x, y, fs, nperseg, noverlap)
+
+    # Select frequency band
+    band_mask = (freqs >= band[0]) & (freqs <= band[1])
+    imcoh_band = np.mean(imcoh[band_mask])
+
+    if absolute:
+        return float(np.abs(imcoh_band))
+    return float(imcoh_band)
+
+
+def compute_all_band_imaginary_coherence(
+    x: NDArray[np.floating],
+    y: NDArray[np.floating],
+    fs: float,
+    bands: dict[str, tuple[float, float]] | None = None,
+    nperseg: int = 256,
+    noverlap: int | None = None,
+    absolute: bool = False,
+) -> dict[str, float]:
+    """Compute imaginary coherence for multiple frequency bands.
+
+    Parameters
+    ----------
+    x : NDArray[np.floating]
+        First input signal.
+    y : NDArray[np.floating]
+        Second input signal.
+    fs : float
+        Sampling frequency in Hz.
+    bands : dict[str, tuple[float, float]] | None, optional
+        Dictionary mapping band names to (low, high) frequency tuples.
+        If None, uses standard EEG bands.
+    nperseg : int, optional
+        Length of each segment. Default is 256.
+    noverlap : int | None, optional
+        Overlap between segments. Default is nperseg // 2.
+    absolute : bool, optional
+        If True, return absolute values. Default is False.
+
+    Returns
+    -------
+    band_imcoh : dict[str, float]
+        Imaginary coherence for each band.
+
+    Examples
+    --------
+    >>> bands = {'alpha': (8, 13), 'beta': (13, 30)}
+    >>> imcoh_bands = compute_all_band_imaginary_coherence(x, y, fs=500, bands=bands)
+    >>> print(f"Alpha ImCoh: {imcoh_bands['alpha']:.3f}")
+    """
+    if bands is None:
+        # Default EEG bands
+        bands = {
+            "delta": (1.0, 4.0),
+            "theta": (4.0, 8.0),
+            "alpha": (8.0, 13.0),
+            "beta": (13.0, 30.0),
+            "gamma": (30.0, 100.0),
+        }
+
+    band_imcoh = {}
+    for band_name, band_range in bands.items():
+        band_imcoh[band_name] = compute_band_imaginary_coherence(
+            x, y, fs, band=band_range, nperseg=nperseg, noverlap=noverlap, absolute=absolute
+        )
+
+    return band_imcoh
+
+
+def compute_imaginary_coherence_matrix(
+    data: NDArray[np.floating],
+    fs: float,
+    band: tuple[float, float] | None = None,
+    nperseg: int = 256,
+    noverlap: int | None = None,
+    absolute: bool = True,
+) -> NDArray[np.floating]:
+    """Compute imaginary coherence connectivity matrix.
+
+    Parameters
+    ----------
+    data : NDArray[np.floating]
+        Multi-channel data (n_channels, n_samples).
+    fs : float
+        Sampling frequency in Hz.
+    band : tuple[float, float] | None, optional
+        If provided, compute band-averaged imaginary coherence.
+        If None, return full spectrum.
+    nperseg : int, optional
+        Length of each segment. Default is 256.
+    noverlap : int | None, optional
+        Overlap between segments. Default is nperseg // 2.
+    absolute : bool, optional
+        If True, return absolute values. Default is True.
+
+    Returns
+    -------
+    matrix : NDArray[np.floating]
+        Imaginary coherence matrix (n_channels, n_channels).
+        Diagonal is zero.
+
+    Examples
+    --------
+    >>> # 8-channel data
+    >>> data = np.random.randn(8, 5000)
+    >>> imcoh_matrix = compute_imaginary_coherence_matrix(data, fs=500, band=(8, 13))
+    >>> print(f"Matrix shape: {imcoh_matrix.shape}")
+    """
+    n_channels = data.shape[0]
+    matrix = np.zeros((n_channels, n_channels))
+
+    for i in range(n_channels):
+        for j in range(i + 1, n_channels):
+            if band is not None:
+                imcoh_val = compute_band_imaginary_coherence(
+                    data[i], data[j], fs, band=band, nperseg=nperseg,
+                    noverlap=noverlap, absolute=absolute
+                )
+            else:
+                _, imcoh = compute_imaginary_coherence(
+                    data[i], data[j], fs, nperseg=nperseg, noverlap=noverlap
+                )
+                imcoh_val = np.mean(np.abs(imcoh)) if absolute else np.mean(imcoh)
+
+            matrix[i, j] = imcoh_val
+            matrix[j, i] = imcoh_val
+
+    return matrix
+
+
+def compute_imaginary_coherence_hyperscanning(
+    data_p1: NDArray[np.floating],
+    data_p2: NDArray[np.floating],
+    fs: float,
+    band: tuple[float, float] | None = None,
+    nperseg: int = 256,
+    noverlap: int | None = None,
+    absolute: bool = True,
+) -> dict[str, NDArray[np.floating]]:
+    """Compute imaginary coherence for hyperscanning (two-person) data.
+
+    Returns within-person and between-person connectivity matrices.
+
+    Parameters
+    ----------
+    data_p1 : NDArray[np.floating]
+        Person 1 data (n_channels_p1, n_samples).
+    data_p2 : NDArray[np.floating]
+        Person 2 data (n_channels_p2, n_samples).
+    fs : float
+        Sampling frequency in Hz.
+    band : tuple[float, float] | None, optional
+        Frequency band for averaging. If None, uses full spectrum.
+    nperseg : int, optional
+        Length of each segment. Default is 256.
+    noverlap : int | None, optional
+        Overlap between segments. Default is nperseg // 2.
+    absolute : bool, optional
+        If True, return absolute values. Default is True.
+
+    Returns
+    -------
+    result : dict[str, NDArray[np.floating]]
+        Dictionary with keys:
+        - 'within_p1': Within-person connectivity for P1
+        - 'within_p2': Within-person connectivity for P2
+        - 'between': Between-person connectivity (n_ch_p1, n_ch_p2)
+
+    Examples
+    --------
+    >>> # 8 channels per person
+    >>> data_p1 = np.random.randn(8, 10000)
+    >>> data_p2 = np.random.randn(8, 10000)
+    >>> result = compute_imaginary_coherence_hyperscanning(
+    ...     data_p1, data_p2, fs=500, band=(8, 13)
+    ... )
+    >>> print(f"Between-person connectivity shape: {result['between'].shape}")
+    """
+    n_ch_p1 = data_p1.shape[0]
+    n_ch_p2 = data_p2.shape[0]
+
+    # Within-person connectivity
+    within_p1 = compute_imaginary_coherence_matrix(
+        data_p1, fs, band=band, nperseg=nperseg, noverlap=noverlap, absolute=absolute
+    )
+    within_p2 = compute_imaginary_coherence_matrix(
+        data_p2, fs, band=band, nperseg=nperseg, noverlap=noverlap, absolute=absolute
+    )
+
+    # Between-person connectivity
+    between = np.zeros((n_ch_p1, n_ch_p2))
+    for i in range(n_ch_p1):
+        for j in range(n_ch_p2):
+            if band is not None:
+                imcoh_val = compute_band_imaginary_coherence(
+                    data_p1[i], data_p2[j], fs, band=band, nperseg=nperseg,
+                    noverlap=noverlap, absolute=absolute
+                )
+            else:
+                _, imcoh = compute_imaginary_coherence(
+                    data_p1[i], data_p2[j], fs, nperseg=nperseg, noverlap=noverlap
+                )
+                imcoh_val = np.mean(np.abs(imcoh)) if absolute else np.mean(imcoh)
+
+            between[i, j] = imcoh_val
+
+    return {
+        "within_p1": within_p1,
+        "within_p2": within_p2,
+        "between": between,
+    }

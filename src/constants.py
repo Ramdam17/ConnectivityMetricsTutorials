@@ -14,12 +14,13 @@ EEG_BANDS: dict[str, tuple[float, float]] = {
 }
 
 # Colors for visualization of each band
+# NOTE: These colors are synchronized with src/colors.py and docs/STYLE_GUIDE.md
 BAND_COLORS: dict[str, str] = {
-    "delta": "#2ecc71",   # Green
-    "theta": "#3498db",   # Blue
-    "alpha": "#9b59b6",   # Purple
-    "beta": "#e74c3c",    # Red
-    "gamma": "#f39c12",   # Orange
+    "delta": "#6C5B7B",   # Plum
+    "theta": "#C06C84",   # Rose
+    "alpha": "#F8B500",   # Gold
+    "beta": "#00CEC9",    # Teal
+    "gamma": "#6DD47E",   # Mint
 }
 
 # Extended band definitions (for specific research needs)
