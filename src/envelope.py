@@ -311,6 +311,8 @@ def compute_envelope_statistics(
         - 'p25': 25th percentile
         - 'p75': 75th percentile
         - 'iqr': Interquartile range (p75 - p25)
+        - 'min': Minimum value
+        - 'max': Maximum value
 
     Notes
     -----
@@ -340,5 +342,7 @@ def compute_envelope_statistics(
         'median': median_val,
         'p25': p25,
         'p75': p75,
-        'iqr': p75 - p25
+        'iqr': p75 - p25,
+        'min': float(np.min(envelope)),
+        'max': float(np.max(envelope)),
     }
