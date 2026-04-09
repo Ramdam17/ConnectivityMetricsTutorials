@@ -1,6 +1,6 @@
-# Connectivity Metrics Tutorials
+# EEG Connectivity Metrics — A Hyperscanning Tutorial Series
 
-A comprehensive workshop series on **EEG connectivity analysis for hyperscanning** — from signal processing fundamentals to advanced inter-brain connectivity metrics.
+A comprehensive workshop series on **EEG connectivity analysis for hyperscanning** — from signal processing fundamentals to advanced inter-brain connectivity metrics, published as a [Jupyter Book](https://ppsp-team.github.io/ConnectivityMetricsTutorials).
 
 Designed for graduate students and researchers in neuroscience, psychology, and biomedical engineering. Assumes basic familiarity with EEG and Python. No prior signal processing expertise required.
 
@@ -8,34 +8,30 @@ Designed for graduate students and researchers in neuroscience, psychology, and 
 
 ## What You Will Learn
 
-By the end of this workshop, you will be able to:
+By the end of this series, you will be able to:
 
 - Decompose EEG signals into frequency components and extract band power
 - Apply filtering, compute the Hilbert transform, and work with instantaneous phase
 - Understand why volume conduction is a fundamental challenge in EEG connectivity
-- Implement from scratch: PLV, PLI, wPLI, coherence, imaginary coherence, envelope correlation, mutual information, and transfer entropy
+- Implement from scratch: **PLV, PLI, wPLI, coherence, imaginary coherence, envelope correlation, mutual information, and transfer entropy**
 - Apply these metrics in a hyperscanning (dual-brain) context
 - Validate results with the [HyPyP](https://github.com/ppsp-team/HyPyP) library
 
 ---
 
-## Notebook Structure
+## Book Structure
 
-Each topic has two versions:
-- **Tutorial** (`*.ipynb`): full implementation with inline code, explanations, and exercises
-- **Quick** (`*_quick.ipynb`): streamlined version importing from `src/`, for reference or review
-
-### Part 1: Foundations
+### Part 1 — Foundations
 
 | Block | Topic | Notebooks |
 |-------|-------|-----------|
-| A | Signal Fundamentals | A01 Signals & Sampling · A02 Frequency Domain · A03 Power Spectrum · A04a Filter Design · A04b Applied Filtering |
-| B | Phase & Amplitude | B01 Hilbert Transform · B02a Circular Statistics · B02b Phase Relationships · B03a Envelope Extraction · B03b Envelope Correlation · B04a STFT & Spectrograms · B04b Wavelet Analysis |
+| A | Signal Fundamentals | A01 Signals & Sampling · A02 Frequency Domain · A03 Power Spectrum · A04a Filter Fundamentals · A04b Applied Filtering |
+| B | Phase & Amplitude | B01 Hilbert Transform · B02a Circular Statistics · B02b Phase Relationships · B03a Amplitude Envelope · B03b Envelope Correlation · B04a STFT & Spectrograms · B04b Wavelet Analysis |
 | C | Connectivity Concepts | C01 Volume Conduction · C02a Matrix Computation · C02b Matrix Visualization · C03 Statistical Significance |
 | D | Information Theory | D01 Entropy · D02 Mutual Information · D03 Transfer Entropy |
 | E | Hyperscanning Context | E01 Graph Theory · E02a Hyperscanning Concepts · E02b Hyperscanning Data · E02c Hyperscanning Analysis |
 
-### Part 2: Connectivity Metrics
+### Part 2 — Connectivity Metrics
 
 | Block | Topic | Notebooks |
 |-------|-------|-----------|
@@ -46,39 +42,43 @@ Each topic has two versions:
 
 ---
 
-## Prerequisites
-
-- Python 3.12+
-- [Poetry](https://python-poetry.org/) for dependency management
-
----
-
 ## Setup
+
+### Read online
+
+The book is published at **[ppsp-team.github.io/ConnectivityMetricsTutorials](https://ppsp-team.github.io/ConnectivityMetricsTutorials)** — no installation required.
+
+### Run locally
 
 ```bash
 git clone https://github.com/ppsp-team/ConnectivityMetricsTutorials.git
 cd ConnectivityMetricsTutorials
-poetry install
-poetry shell
-jupyter-book build book/
-open book/_build/html/index.html
+uv sync
+uv run jupyter lab book/
 ```
 
-Or run notebooks locally with `jupyter lab` from the `book/` directory.
+**Prerequisites:** Python 3.12+, [uv](https://docs.astral.sh/uv/)
+
+To build the full HTML book locally:
+
+```bash
+uv run jupyter-book build
+open _build/html/index.html
+```
 
 ---
 
 ## Project Layout
 
 ```
-book/                        # Jupyter Book source (published on GitHub Pages)
-├── 01_foundations/          # Blocks A–E: signal processing foundations
-└── 02_connectivity_metrics/ # Blocks F–I: connectivity metric implementations
-
-src/                         # Reusable Python modules (imported by all notebooks)
-archive/                     # Original notebooks (reference implementations)
-docs/                        # Style guide, writing spec, sprint plan, notebook index
-data/                        # Raw and processed signals
+book/                  # Jupyter Book content (published on GitHub Pages)
+├── 01_foundations/    # Blocks A–E: signal processing foundations
+└── 02_connectivity_metrics/  # Blocks F–I: connectivity metrics
+myst.yml               # Jupyter Book configuration (mystmd)
+src/                   # Reusable Python modules (imported by all notebooks)
+archive/               # Original notebook drafts (reference only)
+docs/                  # Style guides, review reports, JB template
+data/                  # Raw and processed EEG data
 ```
 
 ---
@@ -88,10 +88,10 @@ data/                        # Raw and processed signals
 | Document | Description |
 |----------|-------------|
 | [docs/CONTEXT.md](docs/CONTEXT.md) | Project context, audience, and pedagogical approach |
-| [docs/NOTEBOOKS_INDEX.md](docs/NOTEBOOKS_INDEX.md) | Full index of all notebooks |
 | [docs/STYLE_GUIDE.md](docs/STYLE_GUIDE.md) | Visual and code style standards |
-| [docs/NOTEBOOK_WRITING_SPEC.md](docs/NOTEBOOK_WRITING_SPEC.md) | Specification for notebook structure |
-| [docs/SPRINT_PLAN.md](docs/SPRINT_PLAN.md) | Development sprint plan and progress |
+| [docs/JB_STYLE_GUIDE.md](docs/JB_STYLE_GUIDE.md) | MyST/Jupyter Book formatting guide |
+| [docs/JB_NOTEBOOK_TEMPLATE.ipynb](docs/JB_NOTEBOOK_TEMPLATE.ipynb) | Template for new notebooks |
+| [docs/reviews/](docs/reviews/) | Sprint review reports |
 
 ---
 
