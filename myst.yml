@@ -33,25 +33,25 @@ project:
             - file: book/01_foundations/A_signal_fundamentals/A01_signals_and_sampling.ipynb
             - file: book/01_foundations/A_signal_fundamentals/A02_frequency_domain.ipynb
             - file: book/01_foundations/A_signal_fundamentals/A03_power_spectrum_frequency_bands.ipynb
-            - file: book/01_foundations/A_signal_fundamentals/A04a_filter_fundamentals.ipynb
-            - file: book/01_foundations/A_signal_fundamentals/A04b_applied_filtering.ipynb
+            - file: book/01_foundations/A_signal_fundamentals/A04_filter_fundamentals.ipynb
+            - file: book/01_foundations/A_signal_fundamentals/A05_applied_filtering.ipynb
         - title: "Block B — Phase & Amplitude"
           children:
             - file: book/01_foundations/B_phase_and_amplitude/intro.md
             - file: book/01_foundations/B_phase_and_amplitude/B01_hilbert_transform.ipynb
-            - file: book/01_foundations/B_phase_and_amplitude/B02a_circular_statistics.ipynb
-            - file: book/01_foundations/B_phase_and_amplitude/B02b_phase_relationships.ipynb
-            - file: book/01_foundations/B_phase_and_amplitude/B03a_amplitude_envelope.ipynb
-            - file: book/01_foundations/B_phase_and_amplitude/B03b_envelope_correlation.ipynb
-            - file: book/01_foundations/B_phase_and_amplitude/B04a_stft_spectrograms.ipynb
-            - file: book/01_foundations/B_phase_and_amplitude/B04b_wavelet_analysis.ipynb
+            - file: book/01_foundations/B_phase_and_amplitude/B02_circular_statistics.ipynb
+            - file: book/01_foundations/B_phase_and_amplitude/B03_phase_relationships.ipynb
+            - file: book/01_foundations/B_phase_and_amplitude/B04_amplitude_envelope.ipynb
+            - file: book/01_foundations/B_phase_and_amplitude/B05_envelope_correlation.ipynb
+            - file: book/01_foundations/B_phase_and_amplitude/B06_stft_spectrograms.ipynb
+            - file: book/01_foundations/B_phase_and_amplitude/B07_wavelet_analysis.ipynb
         - title: "Block C — Connectivity Concepts"
           children:
             - file: book/01_foundations/C_connectivity_concepts/intro.md
             - file: book/01_foundations/C_connectivity_concepts/C01_volume_conduction.ipynb
-            - file: book/01_foundations/C_connectivity_concepts/C02a_connectivity_matrices.ipynb
-            - file: book/01_foundations/C_connectivity_concepts/C02b_matrix_visualization.ipynb
-            - file: book/01_foundations/C_connectivity_concepts/C03_statistical_significance.ipynb
+            - file: book/01_foundations/C_connectivity_concepts/C02_connectivity_matrices.ipynb
+            - file: book/01_foundations/C_connectivity_concepts/C03_matrix_visualization.ipynb
+            - file: book/01_foundations/C_connectivity_concepts/C04_statistical_significance.ipynb
         - title: "Block D — Information Theory"
           children:
             - file: book/01_foundations/D_information_theory/intro.md
@@ -62,17 +62,17 @@ project:
           children:
             - file: book/01_foundations/E_hyperscanning_context/intro.md
             - file: book/01_foundations/E_hyperscanning_context/E01_graph_theory_basics.ipynb
-            - file: book/01_foundations/E_hyperscanning_context/E02a_hyperscanning_concepts.ipynb
-            - file: book/01_foundations/E_hyperscanning_context/E02b_hyperscanning_data.ipynb
-            - file: book/01_foundations/E_hyperscanning_context/E02c_hyperscanning_analysis.ipynb
+            - file: book/01_foundations/E_hyperscanning_context/E02_hyperscanning_concepts.ipynb
+            - file: book/01_foundations/E_hyperscanning_context/E03_hyperscanning_data.ipynb
+            - file: book/01_foundations/E_hyperscanning_context/E04_hyperscanning_analysis.ipynb
     - title: "Part 2: Connectivity Metrics"
       children:
         - title: "Block F — Coherence-Based"
           children:
             - file: book/02_connectivity_metrics/F_coherence_based/intro.md
-            - file: book/02_connectivity_metrics/F_coherence_based/F01a_coherence_theory.ipynb
-            - file: book/02_connectivity_metrics/F_coherence_based/F01b_coherence_practice.ipynb
-            - file: book/02_connectivity_metrics/F_coherence_based/F02_imaginary_coherence.ipynb
+            - file: book/02_connectivity_metrics/F_coherence_based/F01_coherence_theory.ipynb
+            - file: book/02_connectivity_metrics/F_coherence_based/F02_coherence_practice.ipynb
+            - file: book/02_connectivity_metrics/F_coherence_based/F03_imaginary_coherence.ipynb
         - title: "Block G — Phase-Based"
           children:
             - file: book/02_connectivity_metrics/G_phase_based/intro.md

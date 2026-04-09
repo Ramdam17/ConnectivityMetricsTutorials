@@ -12,7 +12,7 @@ With the foundations in place, Part 2 implements the actual inter-brain connecti
 
 | Block | Topic | Notebooks | Key metric(s) |
 |-------|-------|-----------|---------------|
-| **F** | Coherence-Based | F01a–F02 | Spectral coherence, imaginary coherence |
+| **F** | Coherence-Based | F01–F03 | Spectral coherence, imaginary coherence |
 | **G** | Phase-Based | G01–G03 | PLV, PLI, wPLI |
 | **H** | Amplitude-Based | H01–H02 | Envelope correlation, power correlation |
 | **I** | Information-Theoretic | I01–I02 | MI connectivity, transfer entropy |
@@ -46,6 +46,6 @@ Every notebook in Part 2 validates the from-scratch implementation against the `
 ## Prerequisites
 
 All of Part 1, especially:
-- {doc}`../01_foundations/B_phase_and_amplitude/B02a_circular_statistics` (phase statistics)
+- {doc}`../01_foundations/B_phase_and_amplitude/B02_circular_statistics` (phase statistics)
 - {doc}`../01_foundations/C_connectivity_concepts/C01_volume_conduction` (why some metrics exist)
-- {doc}`../01_foundations/C_connectivity_concepts/C02a_connectivity_matrices` (matrix representation)
+- {doc}`../01_foundations/C_connectivity_concepts/C02_connectivity_matrices` (matrix representation)

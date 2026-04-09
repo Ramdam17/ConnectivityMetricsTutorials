@@ -15,8 +15,8 @@ Before measuring connectivity between two brains, you need to understand what a 
 | {doc}`A01_signals_and_sampling` | What is a digital signal? Sampling rate, Nyquist theorem, aliasing | ~60 min |
 | {doc}`A02_frequency_domain` | Fourier transform, FFT, amplitude and phase spectra | ~60 min |
 | {doc}`A03_power_spectrum_frequency_bands` | Power spectral density, Welch's method, EEG band power | ~60 min |
-| {doc}`A04a_filter_fundamentals` | Filter types (IIR/FIR), frequency response, filter order | ~45 min |
-| {doc}`A04b_applied_filtering` | Zero-phase filtering, notch filter, bandpass extraction | ~45 min |
+| {doc}`A04_filter_fundamentals` | Filter types (IIR/FIR), frequency response, filter order | ~45 min |
+| {doc}`A05_applied_filtering` | Zero-phase filtering, notch filter, bandpass extraction | ~45 min |
 
 ---
 
@@ -29,7 +29,7 @@ Every EEG connectivity metric in Part 2 operates on signals that have been **sam
 - Filtering with a causal IIR filter introduces a phase shift that will corrupt phase-based connectivity metrics (PLV, PLI) computed in Block G.
 
 :::warning
-A04a introduces a concept with major downstream consequences: **zero-phase filtering**. Always use zero-phase (forward-backward) filtering for offline EEG analysis. The implications are revisited in {doc}`../B_phase_and_amplitude/B01_hilbert_transform`.
+A04 introduces a concept with major downstream consequences: **zero-phase filtering**. Always use zero-phase (forward-backward) filtering for offline EEG analysis. The implications are revisited in {doc}`../B_phase_and_amplitude/B01_hilbert_transform`.
 :::
 
 ---
@@ -51,7 +51,7 @@ A04a introduces a concept with major downstream consequences: **zero-phase filte
 - EEG frequency bands: $\delta$ (1–4 Hz), $\theta$ (4–8 Hz), $\alpha$ (8–13 Hz), $\beta$ (13–30 Hz), $\gamma$ (30+ Hz)
 - Absolute vs relative band power
 
-**From A04a–A04b:**
+**From A04–A05:**
 - IIR vs FIR filter design trade-offs
 - Zero-phase filtering with `filtfilt`
 - Notch filtering for powerline noise (50/60 Hz)
@@ -64,7 +64,7 @@ A01 is the entry point — no prerequisites. Each subsequent notebook builds on 
 
 ```
 A01 → A02 → A03
-              └→ A04a → A04b
+              └→ A04 → A05
 ```
 
-After completing A04b, continue to {doc}`../B_phase_and_amplitude/intro`.
+After completing A05, continue to {doc}`../B_phase_and_amplitude/intro`.
