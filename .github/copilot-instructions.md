@@ -1,24 +1,21 @@
-# Copilot Instructions — Hyperscanning Workshop
+# Copilot Instructions — Connectivity Metrics Tutorial Book
 
 ## Language
 All code, comments, docstrings, and documentation must be written in English.
 
-## File Management
-Never create, delete, or edit any file without explicit user consent.
-
 ## Project Structure
-- Notebooks: `01_foundations/` and `02_connectivity_metrics/`, by category (A, B, C...)
+- Book content: `book/` (Jupyter Book / mystmd)
 - Reusable functions: `src/` directory
-- Naming: `A01_`, `A02_`, `B01_`, etc.
-- Quick notebooks: `*_quick.ipynb` (import from src/ instead of inline definitions)
+- Archive (reference only, do not modify): `archive/`
+- Naming: `A01_`, `A02_`, `B01_`, etc. No `_quick` suffix.
 
 ## Git Workflow
-- One branch per notebook: `feature/<notebook_id>`
-- Clear commit messages
+- One branch per sprint: `feat/SXX-short-description`
+- Commit scope: `feat(SXX): ...`, `fix(SXX): ...`, `docs(SXX): ...`
 - Merge to main after review
 
 ## Dependencies
-Managed with Poetry. Core: numpy, scipy, matplotlib, mne, hypyp.
+Managed with **uv** (`pyproject.toml` + `uv.lock`). Core: numpy, scipy, matplotlib, mne, hypyp, jupyter-book.
 
 ## Typed Python
 - Complete type hints on all functions (params + return)
@@ -30,71 +27,32 @@ Managed with Poetry. Core: numpy, scipy, matplotlib, mne, hypyp.
 - PEP 8 compliant
 - NumPy-style docstrings
 - Functions over 20 lines go to `src/`
-- No hardcoded values
+- No hardcoded values — import constants from `src.constants` and `src.colors`
 
-## Notebook Structure
-- **Full notebooks**: See `docs/NOTEBOOK_TEMPLATE.md`
-- **Quick notebooks**: See `docs/NOTEBOOK_QUICK_TEMPLATE.md`
-- Structure: Introduction → Intuition → Implementation → Visualization → HyPyP comparison → Application → Summary → Discussion
+## Notebook Structure (MyST / Jupyter Book)
+See `docs/JB_STYLE_GUIDE.md` for the full spec.
 
-## Notebook Cell Order (CRITICAL)
-For ALL notebooks (full and quick):
-1. Cell 1 = Header (`# [ID]: Title` + Duration + Prerequisites + Learning Objectives)
-2. Cell 2 = Table of Contents (`## Table of Contents` with `#section-X-...` anchors)
-3. Cell 3 = Imports (Code cell with `# =====` style headers)
-4. Cells 4+ = Sections
-5. Last 3 cells = Summary, External Resources, Discussion Questions
+Required sections in order:
+1. YAML frontmatter (raw cell)
+2. Introduction
+3. Intuition
+4. Implementation
+5. Application
+6. Exercises (minimum 3, with collapsible solutions)
+7. Summary
+8. Resources
+9. Discussion Questions
+
+**No quick notebook variants.** Each topic has exactly one definitive notebook.
+**No interactive widgets.** Static figures only.
 
 ## Colors (CRITICAL)
-- Always import: `from colors import COLORS`
-- Use ONLY these keys: `signal_1`, `signal_2`, `signal_3`, `signal_4`, `signal_5`, `signal_6`
-- For EEG bands: `delta`, `theta`, `alpha`, `beta`, `gamma`
-- NEVER use: `primary`, `secondary`, `accent1`, `accent2` (these keys DO NOT EXIST)
-
-## NotebookLM Resources (CRITICAL)
-In External Resources section, use this EXACT format:
-```markdown
-### 🎧 NotebookLM Resources
-
-- [📺 Video Overview](URL) - Video overview of [topic] concepts
-- [📝 Quiz](URL) - Test your understanding
-- [🗂️ Flashcards](URL) - Review key concepts
-```
-- ALWAYS say "Video" — NEVER say "Audio"
-- The 📺 emoji is for VIDEO, not audio
-- Description must start with "Video overview of..."
-
-## Exercises Format (CRITICAL)
-Use this EXACT format for exercises:
-```markdown
----
-
-<a id="section-N-exercises"></a>
-## N. Exercises
-
-### 🎯 Exercise 1: Title
-
-**Task:** Description of what to do.
-
-- Bullet point instructions
-- More instructions
-
-\`\`\`python
-# Your code here
-\`\`\`
-
-<details>
-<summary>💡 Click to reveal solution</summary>
-
-\`\`\`python
-# Solution code
-\`\`\`
-
-</details>
-```
-- Always include 🎯 emoji before exercise title
-- Always use `<details>` for solutions
-- Always include `<a id="..."></a>` anchor before section title
+- Always import: `from src.colors import COLORS`
+- Signal keys: `signal_1` … `signal_6`
+- Band keys: `delta`, `theta`, `alpha`, `beta`, `gamma`
+- NEVER hardcode hex colours in notebooks
 
 ## Visualization
-Follow STYLE_GUIDE.md for colors, dimensions, fonts.
+- Follow `docs/STYLE_GUIDE.md` for dimensions and font sizes
+- Save figures explicitly with `fig.savefig(...)` before `plt.show()`
+- Use the `{figure}` MyST directive in markdown cells for captioned figures

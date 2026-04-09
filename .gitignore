@@ -35,13 +35,6 @@ figures/
 *.png
 *.pdf
 
-# Documentation (internal)
-docs/
-
-# Jupyter Book build artifacts
-book/_build/
+# Jupyter Book / MyST build artifacts
+_build/
 .jupyter_cache/
-__pycache__/
-
-# Poetry
-poetry.lock
