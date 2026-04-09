@@ -92,3 +92,5 @@ project:
 
 site:
   template: book-theme
+  options:
+    style: book/_static/custom.css

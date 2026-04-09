@@ -1,0 +1,65 @@
+/*
+ * Custom CSS for EEG Connectivity Metrics Tutorial Book
+ * Palette: docs/STYLE_GUIDE.md
+ */
+
+/* ── Project colour palette ─────────────────────────────── */
+:root {
+  /* Signal colours */
+  --color-signal-1: #7eb8da;   /* Sky Blue   — Subject 1 */
+  --color-signal-2: #f4a4b8;   /* Rose Pink  — Subject 2 */
+  --color-signal-3: #b8d4a8;   /* Sage Green — Reference */
+  --color-signal-4: #e8c87a;   /* Golden     — Highlight */
+  --color-signal-5: #c4a8d4;   /* Lavender   */
+  --color-signal-6: #a8d4d0;   /* Soft Teal  */
+
+  /* Connectivity */
+  --color-low-sync:  #ecf0f1;
+  --color-high-sync: #9b59b6;
+
+  /* Diverging */
+  --color-negative: #e17055;
+  --color-zero:     #ffffff;
+  --color-positive: #00cec9;
+
+  /* Frequency bands */
+  --color-delta: #6c5b7b;
+  --color-theta: #c06c84;
+  --color-alpha: #f8b500;
+  --color-beta:  #00cec9;
+  --color-gamma: #6dd47e;
+}
+
+/* ── Admonition overrides ────────────────────────────────── */
+/* MyST admonition types: note, tip, warning, seealso, important */
+
+.admonition.note,
+.admonition.seealso {
+  border-left-color: var(--color-signal-1);
+}
+
+.admonition.tip {
+  border-left-color: var(--color-signal-3);
+}
+
+.admonition.warning,
+.admonition.caution {
+  border-left-color: var(--color-signal-4);
+}
+
+.admonition.important {
+  border-left-color: var(--color-high-sync);
+}
+
+/* ── Code cells ──────────────────────────────────────────── */
+.cell_output pre {
+  font-size: 0.85em;
+  line-height: 1.5;
+}
+
+/* ── Navigation ──────────────────────────────────────────── */
+/* Subtle left-border accent on active TOC entry */
+nav.bd-sidenav a.active {
+  border-left: 3px solid var(--color-signal-1);
+  padding-left: 0.5rem;
+}
