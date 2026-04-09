@@ -35,9 +35,6 @@ figures/
 *.png
 *.pdf
 
-# Documentation (internal)
-docs/
-
 # Jupyter Book build artifacts
 book/_build/
 .jupyter_cache/

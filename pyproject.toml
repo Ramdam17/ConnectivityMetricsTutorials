@@ -1,54 +1,59 @@
-[tool.poetry]
+[project]
 name = "connectivity-metrics-tutorials"
 version = "0.1.0"
 description = "Educational workshop series on hyperscanning and EEG connectivity metrics"
-authors = ["Ramdam17 <remy.ramadour.labs@gmail.com>"]
+authors = [{ name = "Ramdam17", email = "remy.ramadour.labs@gmail.com" }]
 readme = "README.md"
-packages = [{include = "src"}]
+requires-python = ">=3.12,<3.14"
+dependencies = [
+    # Core scientific computing
+    "numpy>=2.2",
+    "scipy>=1.11",
+    # Visualization
+    "matplotlib>=3.8",
+    "seaborn>=0.13",
+    # EEG analysis
+    "mne>=1.6",
+    "hypyp>=0.5.0b15",
+    # Jupyter / Jupyter Book
+    "jupyter>=1.0",
+    "jupyter-book>=1.0",
+    "jupyter-cache>=1.0",
+    "ipykernel>=6.27",
+    "ipywidgets>=8.1",
+    # Data handling
+    "pandas>=2.1",
+    # Network analysis
+    "networkx>=3.2",
+]
 
-[tool.poetry.dependencies]
-python = ">=3.12,<3.14"
-# Core scientific computing
-numpy = "^2.2"
-scipy = "^1.11"
-# Visualization
-matplotlib = "^3.8"
-seaborn = "^0.13"
-# EEG analysis
-mne = "^1.6"
-hypyp = ">=0.5.0b15"
-# Jupyter support
-jupyter = "^1.0"
-ipykernel = "^6.27"
-ipywidgets = "^8.1"
-# Data handling
-pandas = "^2.1"
-# Network analysis
-networkx = "^3.2"
+[dependency-groups]
+dev = [
+    "ruff>=0.1",
+    "mypy>=1.7",
+    "pre-commit>=3.6",
+    "pytest>=7.4",
+]
 
-[tool.poetry.group.dev.dependencies]
-# Linting and formatting
-ruff = "^0.1"
-mypy = "^1.7"
-# Pre-commit hooks
-pre-commit = "^3.6"
-# Testing
-pytest = "^7.4"
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src"]
 
 [tool.ruff]
 line-length = 88
-target-version = "py311"
-select = ["E", "F", "I", "N", "W", "D", "UP", "ANN", "B", "C4", "SIM"]
-ignore = ["ANN101", "ANN102", "D100", "D104"]
+target-version = "py312"
 
-[tool.ruff.pydocstyle]
+[tool.ruff.lint]
+select = ["E", "F", "I", "N", "W", "UP", "B", "C4", "SIM"]
+ignore = ["D100", "D104"]
+
+[tool.ruff.lint.pydocstyle]
 convention = "numpy"
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.12"
 strict = true
 ignore_missing_imports = true
-
-[build-system]
-requires = ["poetry-core>=1.0.0"]
-build-backend = "poetry.core.masonry.api"
