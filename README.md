@@ -25,17 +25,17 @@ By the end of this series, you will be able to:
 
 | Block | Topic | Notebooks |
 |-------|-------|-----------|
-| A | Signal Fundamentals | A01 Signals & Sampling · A02 Frequency Domain · A03 Power Spectrum · A04a Filter Fundamentals · A04b Applied Filtering |
-| B | Phase & Amplitude | B01 Hilbert Transform · B02a Circular Statistics · B02b Phase Relationships · B03a Amplitude Envelope · B03b Envelope Correlation · B04a STFT & Spectrograms · B04b Wavelet Analysis |
-| C | Connectivity Concepts | C01 Volume Conduction · C02a Matrix Computation · C02b Matrix Visualization · C03 Statistical Significance |
+| A | Signal Fundamentals | A01 Signals & Sampling · A02 Frequency Domain · A03 Power Spectrum · A04 Filter Fundamentals · A05 Applied Filtering |
+| B | Phase & Amplitude | B01 Hilbert Transform · B02 Circular Statistics · B03 Phase Relationships · B04 Amplitude Envelope · B05 Envelope Correlation · B06 STFT & Spectrograms · B07 Wavelet Analysis |
+| C | Connectivity Concepts | C01 Volume Conduction · C02 Matrix Computation · C03 Matrix Visualization · C04 Statistical Significance |
 | D | Information Theory | D01 Entropy · D02 Mutual Information · D03 Transfer Entropy |
-| E | Hyperscanning Context | E01 Graph Theory · E02a Hyperscanning Concepts · E02b Hyperscanning Data · E02c Hyperscanning Analysis |
+| E | Hyperscanning Context | E01 Graph Theory · E02 Hyperscanning Concepts · E03 Hyperscanning Data · E04 Hyperscanning Analysis |
 
 ### Part 2 — Connectivity Metrics
 
 | Block | Topic | Notebooks |
 |-------|-------|-----------|
-| F | Coherence-Based | F01a Coherence Theory · F01b Coherence Practice · F02 Imaginary Coherence |
+| F | Coherence-Based | F01 Coherence Theory · F02 Coherence Practice · F03 Imaginary Coherence |
 | G | Phase-Based | G01 PLV · G02 PLI · G03 wPLI |
 | H | Amplitude-Based | H01 Envelope Correlation · H02 Power Correlation |
 | I | Information-Theoretic | I01 MI Connectivity · I02 Transfer Entropy Connectivity |

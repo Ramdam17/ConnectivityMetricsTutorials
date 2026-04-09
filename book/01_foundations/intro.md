@@ -12,11 +12,11 @@ Before computing connectivity between two EEG signals, you need to understand th
 
 | Block | Topic | Notebooks | Key skill |
 |-------|-------|-----------|-----------|
-| **A** | Signal Fundamentals | A01–A04b | Sampling, FFT, filtering |
-| **B** | Phase & Amplitude | B01–B04b | Hilbert transform, PLV intuition |
-| **C** | Connectivity Concepts | C01–C03 | Volume conduction, matrices, statistics |
+| **A** | Signal Fundamentals | A01–A05 | Sampling, FFT, filtering |
+| **B** | Phase & Amplitude | B01–B07 | Hilbert transform, PLV intuition |
+| **C** | Connectivity Concepts | C01–C04 | Volume conduction, matrices, statistics |
 | **D** | Information Theory | D01–D03 | Entropy, mutual information, TE |
-| **E** | Hyperscanning Context | E01–E02c | Graph theory, dual-brain structure |
+| **E** | Hyperscanning Context | E01–E04 | Graph theory, dual-brain structure |
 
 ---
 

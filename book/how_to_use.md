@@ -32,21 +32,21 @@ Read this as: *"Block X requires Block Y to have been completed first."*
 ```
 A01 (entry point)
  └─ A02 ─ A03
-       └─ A04a ─ A04b
-                    └─ B01 ─ B02a ─ B02b ─┐
-                         └─ B03a ─ B03b   │
-                         └─ B04a ─ B04b   │
-                                          │
-            A03 ──────────────────────────┼─ C02a ─ C02b ─ C03
-            B02b ─ C01 ───────────────────┘
-                                          │
-                                          └─ E01 ─ E02a ─ E02b ─ E02c
+       └─ A04 ─ A05
+                  └─ B01 ─ B02 ─ B03 ─┐
+                       └─ B04 ─ B05   │
+                       └─ B06 ─ B07   │
+                                      │
+            A03 ──────────────────────┼─ C02 ─ C03 ─ C04
+            B03 ─ C01 ────────────────┘
+                                      │
+                                      └─ E01 ─ E02 ─ E03 ─ E04
             A01 ── D01 ─ D02 ─ D03
 
 Part 2 (requires Part 1):
-  C02a + A03 ─── F01a ─ F01b ─ F02
-  B02b + C02a ── G01 ─ G02 ─ G03
-  B03b + C02a ── H01 ─ H02
+  C02 + A03 ──── F01 ─ F02 ─ F03
+  B03 + C02 ─── G01 ─ G02 ─ G03
+  B05 + C02 ─── H01 ─ H02
   D02 ─────────── I01 ─ I02
 ```
 
