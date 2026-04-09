@@ -60,21 +60,23 @@ git clone https://github.com/ppsp-team/ConnectivityMetricsTutorials.git
 cd ConnectivityMetricsTutorials
 poetry install
 poetry shell
-jupyter lab
+jupyter-book build book/
+open book/_build/html/index.html
 ```
 
-Then open any notebook from `notebooks/`.
+Or run notebooks locally with `jupyter lab` from the `book/` directory.
 
 ---
 
 ## Project Layout
 
 ```
-notebooks/
+book/                        # Jupyter Book source (published on GitHub Pages)
 ├── 01_foundations/          # Blocks A–E: signal processing foundations
 └── 02_connectivity_metrics/ # Blocks F–I: connectivity metric implementations
 
-src/                         # Reusable Python modules (imported by quick notebooks)
+src/                         # Reusable Python modules (imported by all notebooks)
+archive/                     # Original notebooks (reference implementations)
 docs/                        # Style guide, writing spec, sprint plan, notebook index
 data/                        # Raw and processed signals
 ```

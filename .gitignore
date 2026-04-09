@@ -38,5 +38,10 @@ figures/
 # Documentation (internal)
 docs/
 
+# Jupyter Book build artifacts
+book/_build/
+.jupyter_cache/
+__pycache__/
+
 # Poetry
 poetry.lock
