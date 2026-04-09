@@ -28,18 +28,9 @@ By the end of this series you will be able to:
 
 The series is divided into two parts:
 
-::::{grid} 1 1 2 2
-:::{card} Part 1 — Foundations
-:link: 01_foundations/intro
-:link-type: doc
-Blocks A through E: signal processing, phase analysis, connectivity concepts, information theory, and hyperscanning context.
-:::
-:::{card} Part 2 — Connectivity Metrics
-:link: 02_connectivity_metrics/intro
-:link-type: doc
-Blocks F through I: coherence, PLV/PLI/wPLI, amplitude coupling, and information-theoretic connectivity.
-:::
-::::
+**[Part 1 — Foundations](01_foundations/intro.md)** — Blocks A through E: signal processing, phase analysis, connectivity concepts, information theory, and hyperscanning context.
+
+**[Part 2 — Connectivity Metrics](02_connectivity_metrics/intro.md)** — Blocks F through I: coherence, PLV/PLI/wPLI, amplitude coupling, and information-theoretic connectivity.
 
 ---
 
